@@ -293,6 +293,9 @@ typedef struct tagBITMAPINFOHEADER {
 #ifndef AUDIO_DEVICE_PERIOD_SIZE_IN_FRAMES
     #define AUDIO_DEVICE_PERIOD_SIZE_IN_FRAMES 0    // Device latency. 0 defaults to 10ms
 #endif
+#ifndef AUDIO_DEVICE_PERIODS
+    #define AUDIO_DEVICE_PERIODS 0    // Device buffer period count. 0 uses miniaudio default
+#endif
 
 #ifndef MAX_AUDIO_BUFFER_POOL_CHANNELS
     #define MAX_AUDIO_BUFFER_POOL_CHANNELS    16    // Audio pool channels
@@ -483,6 +486,7 @@ void InitAudioDevice(void)
     config.playback.channels = AUDIO_DEVICE_CHANNELS;
     config.sampleRate = AUDIO_DEVICE_SAMPLE_RATE;
     config.periodSizeInFrames = AUDIO_DEVICE_PERIOD_SIZE_IN_FRAMES;
+    config.periods = AUDIO_DEVICE_PERIODS;
     config.dataCallback = OnSendAudioDataToDevice;
     config.pUserData = NULL;
     config.noPreSilencedOutputBuffer = true;    // raylib pre-silences the output buffer manually
@@ -523,7 +527,15 @@ void InitAudioDevice(void)
     TRACELOG(LOG_INFO, "    > Format:        %s -> %s", ma_get_format_name(AUDIO.System.device.playback.format), ma_get_format_name(AUDIO.System.device.playback.internalFormat));
     TRACELOG(LOG_INFO, "    > Channels:      %d -> %d", AUDIO.System.device.playback.channels, AUDIO.System.device.playback.internalChannels);
     TRACELOG(LOG_INFO, "    > Sample rate:   %d -> %d", AUDIO.System.device.sampleRate, AUDIO.System.device.playback.internalSampleRate);
+    TRACELOG(LOG_INFO, "    > Requested period: %d frames", AUDIO_DEVICE_PERIOD_SIZE_IN_FRAMES);
+    TRACELOG(LOG_INFO, "    > Requested periods: %d", AUDIO_DEVICE_PERIODS);
+    TRACELOG(LOG_INFO, "    > Actual period: %d frames x %d", AUDIO.System.device.playback.internalPeriodSizeInFrames, AUDIO.System.device.playback.internalPeriods);
     TRACELOG(LOG_INFO, "    > Periods size:  %d", AUDIO.System.device.playback.internalPeriodSizeInFrames*AUDIO.System.device.playback.internalPeriods);
+    if (AUDIO.System.device.playback.internalSampleRate > 0)
+    {
+        TRACELOG(LOG_INFO, "    > Estimated buffer: %.2f ms",
+                 (double)(AUDIO.System.device.playback.internalPeriodSizeInFrames*AUDIO.System.device.playback.internalPeriods)*1000.0/(double)AUDIO.System.device.playback.internalSampleRate);
+    }
 
     AUDIO.System.isReady = true;
 }
